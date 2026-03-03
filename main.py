@@ -231,3 +231,60 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
                 continue
     except Exception as e:
         logger.error(f"Error processing feed {feed_name}: {e}")
+
+
+def main():
+    logger.info("=" * 50)
+    logger.info("Starting RSS Bot for Telegram")
+    logger.info("=" * 50)
+
+    posted_links = load_posted()
+
+    try:
+        with open("feeds.json", "r", encoding="utf-8") as f:
+            feeds_data = json.load(f)
+            feeds = feeds_data.get("feeds", [])
+
+        if not feeds:
+            logger.error("No feeds found in the feeds.json file.")
+            return
+
+        logger.info(f"Loaded {len(feeds)} feeds to monitor")
+        for feed in feeds:
+            logger.info(f"  - {feed.get('name')}: {feed.get('url')}")
+    except FileNotFoundError:
+        logger.error("Feeds.json file not found.")
+        return
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing feeds.json: {e}")
+        return
+
+    cycle_count = 0
+
+    while True:
+        cycle_count += 1
+        logger.info(f"\n--- Cycle {cycle_count} started ---")
+
+        try:
+            for feed in feeds:
+                process_feed(feed, posted_links)
+                time.sleep(5)
+            logger.info(
+                f"Cycle {cycle_count} complete. Waiting {CHECK_INTERVAL / 60:.0f} minutes..."
+            )
+        except KeyboardInterrupt:
+            logger.info("Bot stopped by user")
+            break
+        except Exception as e:
+            logger.error(f"Error in main cycle: {e}")
+            logger.info("Trying to continue...")
+
+        time.sleep(CHECK_INTERVAL)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        logger.critical(f"Fatal error: {e}")
+        raise
