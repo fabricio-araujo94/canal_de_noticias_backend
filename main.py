@@ -80,3 +80,20 @@ def extract_image(entry: Dict[str, Any]) -> Optional[str]:
     except Exception as e:
         logger.warning(f"Error extracting image: {e}")
         return None
+
+
+def clean_summary(summary: str, max_length: int = 300) -> str:
+    try:
+        if not summary:
+            return ""
+
+        soup = BeautifulSoup(summary, "html.parser")
+        text = soup.get_text()
+        text = " ".join(text.split())
+
+        if len(text) > max_length:
+            text = text[:max_length].rsplit(" ", 1)[0] + "..."
+        return text
+    except Exception as e:
+        logger.warning(f"Error while clearing summary: {e}")
+        return summary[:max_length] + "..." if summary else ""
