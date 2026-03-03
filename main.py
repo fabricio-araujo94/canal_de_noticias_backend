@@ -157,3 +157,77 @@ def send_message(channel: str, message: str, retry: int = 3) -> bool:
 
     logger.error(f"Failed to send message after {retry} attempts.")
     return False
+
+
+def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
+    feed_name = feed_info.get("name", "Unknown feed")
+    feed_url = feed_info.get("url", "")
+
+    if not feed_url:
+        logger.error(f"Feed {feed_name} has no defined URL.")
+        return
+
+    logger.info(f"Processing feed: {feed_name}")
+
+    try:
+        feed = feedparser.parse(feed_url)
+        if hasattr(feed, "bozo") and feed.bozo:
+            logger.warning(
+                f"Feed {feed_name} may have parsing issues: {feed.bozo_exception}"
+            )
+
+        if not feed.entries:
+            logger.warning(f"“Feed {feed_name} did not return any entries.”")
+            return
+
+        for i, entry in enumerate(feed.entries[:MAX_ITEMS_PER_FEED]):
+            try:
+                link = entry.get("link", "")
+                if not link:
+                    logger.warning(f"Entry {i} from feed {feed_name} has no link.")
+                    continue
+                if link in posted_links:
+                    logger.debug(f"Link already posted: {link[:50]}...")
+                    continue
+
+                title = entry.get("title", "No title")
+                summary = entry.get("summary", "")
+
+                clean_text = clean_summary(summary)
+
+                image_url = extract_image(entry)
+
+                message = (
+                    f"📰 <b>{feed_name}</b>\n\n"
+                    f"<b>{title}</b>\n\n"
+                    f"{clean_text}\n\n"
+                    f"🔗 <a href='{link}'>Leia mais</a>"
+                )
+
+                success = False
+                if image_url:
+                    success = send_photo(CHANNEL, image_url, message)
+                    if not success:
+                        logger.info(
+                            f"Failed to send photo, trying only message to: {title[:50]}..."
+                        )
+                        success = send_message(CHANNEL, message)
+                else:
+                    success = send_message(CHANNEL, message)
+
+                if success:
+                    if save_posted(link):
+                        posted_links.add(link)
+                        logger.info(f"News published: {title[:50]}...")
+                    else:
+                        logger.error(f"News sent but link not saved: {title[:50]}...")
+                else:
+                    logger.error(f"Failed to publish news: {title[:50]}...")
+
+                time.sleep(2)
+
+            except Exception as e:
+                logger.error(f"Error processing entry {i} from feed {feed_name}: {e}")
+                continue
+    except Exception as e:
+        logger.error(f"Error processing feed {feed_name}: {e}")
