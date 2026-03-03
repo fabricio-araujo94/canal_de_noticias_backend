@@ -97,3 +97,63 @@ def clean_summary(summary: str, max_length: int = 300) -> str:
     except Exception as e:
         logger.warning(f"Error while clearing summary: {e}")
         return summary[:max_length] + "..." if summary else ""
+
+
+def send_photo(channel: str, photo_url: str, caption: str, retry: int = 3) -> bool:
+    url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
+    payload = {
+        "chat_id": channel,
+        "photo": "photo_url",
+        "caption": caption,
+        "parse_mode": "HTML",
+    }
+
+    for attempt in range(retry):
+        try:
+            response = requests.post(url, data=payload, timeout=10)
+            if response.status_code == 200:
+                logger.info(f"Photo successfully uploaded: {photo_url[:50]}...")
+                return True
+            else:
+                logger.warning(
+                    f"Attempt {attempt + 1}: Error sending photo. Status: {response.status_code}"
+                )
+                if attempt < retry - 1:
+                    time.sleep(2**attempt)
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Attempt {attempt + 1}: Connection error: {e}")
+            if attempt < retry - 1:
+                time.sleep(2**attempt)
+
+    logger.error(f"Failed to send photo after {retry} attempts.")
+    return False
+
+
+def send_message(channel: str, message: str, retry: int = 3) -> bool:
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    payload = {
+        "chat_id": channel,
+        "text": message,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }
+
+    for attempt in range(retry):
+        try:
+            response = requests.post(url, data=payload, timeout=10)
+            if response.status_code == 200:
+                logger.info("Message sent successfully.")
+                return True
+            else:
+                logger.warning(
+                    f"Attempt {attempt + 1}: Error sending message. Status: {response.status_code}"
+                )
+                if attempt < retry - 1:
+                    time.sleep(2**attempt)
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Attempt {attempt + 1}: Connection error: {e}")
+            if attempt < retry - 1:
+                time.sleep(2**attempt)
+
+    logger.error(f"Failed to send message after {retry} attempts.")
+    return False
