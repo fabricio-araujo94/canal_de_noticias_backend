@@ -56,3 +56,27 @@ def save_posted(link: str) -> bool:
     except Exception as e:
         logger.error(f"Error saving link {link}: {e}")
         return False
+
+
+def extract_image(entry: Dict[str, Any]) -> Optional[str]:
+    try:
+        if "media_content" in entry and entry.media_content:
+            return entry.media_content[0]["url"]
+        if "media_thumbnail" in entry and entry.media_thumbnail:
+            return entry.media_thumbnail[0]["url"]
+        if "summary" in entry and entry.summary:
+            soup = BeautifulSoup(entry.summary, "html.parser")
+            img = soup.find("img")
+            if img and img.get("src"):
+                return img["src"]
+        if "content" in entry and entry.content:
+            for content in entry.content:
+                if "value" in content:
+                    soup = BeautifulSoup(content.value)
+                    img = soup.find("img")
+                    if img and img.get("src"):
+                        return img["src"]
+        return None
+    except Exception as e:
+        logger.warning(f"Error extracting image: {e}")
+        return None
