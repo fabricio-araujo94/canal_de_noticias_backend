@@ -1,0 +1,12 @@
+{
+  "feeds": [
+    {
+      "name": "ICL Notícias",
+      "url": "https://iclnoticias.com.br/feed/"
+    },
+    {
+      "name": "Brasil de Fato",
+      "url": "https://www.brasildefato.com.br/feed/"
+    }
+  ]
+}
