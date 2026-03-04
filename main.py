@@ -28,7 +28,7 @@ if not TOKEN:
     logger.error("TELEGRAM_TOKEN not found in environment variables")
     raise ValueError("TELEGRAM_TOKEN is required")
 
-CHANNEL = "@channel"
+CHANNEL = "@jornaldepedra"
 POSTED_FILE = "posted_links.txt"  # temporary
 CHECK_INTERVAL = 600  # every 10 minutes
 MAX_ITEMS_PER_FEED = 5
@@ -58,30 +58,6 @@ def save_posted(link: str) -> bool:
         return False
 
 
-def extract_image(entry: Dict[str, Any]) -> Optional[str]:
-    try:
-        if "media_content" in entry and entry.media_content:
-            return entry.media_content[0]["url"]
-        if "media_thumbnail" in entry and entry.media_thumbnail:
-            return entry.media_thumbnail[0]["url"]
-        if "summary" in entry and entry.summary:
-            soup = BeautifulSoup(entry.summary, "html.parser")
-            img = soup.find("img")
-            if img and img.get("src"):
-                return img["src"]
-        if "content" in entry and entry.content:
-            for content in entry.content:
-                if "value" in content:
-                    soup = BeautifulSoup(content.value)
-                    img = soup.find("img")
-                    if img and img.get("src"):
-                        return img["src"]
-        return None
-    except Exception as e:
-        logger.warning(f"Error extracting image: {e}")
-        return None
-
-
 def clean_summary(summary: str, max_length: int = 300) -> str:
     try:
         if not summary:
@@ -97,36 +73,6 @@ def clean_summary(summary: str, max_length: int = 300) -> str:
     except Exception as e:
         logger.warning(f"Error while clearing summary: {e}")
         return summary[:max_length] + "..." if summary else ""
-
-
-def send_photo(channel: str, photo_url: str, caption: str, retry: int = 3) -> bool:
-    url = f"https://api.telegram.org/bot{TOKEN}/sendPhoto"
-    payload = {
-        "chat_id": channel,
-        "photo": "photo_url",
-        "caption": caption,
-        "parse_mode": "HTML",
-    }
-
-    for attempt in range(retry):
-        try:
-            response = requests.post(url, data=payload, timeout=10)
-            if response.status_code == 200:
-                logger.info(f"Photo successfully uploaded: {photo_url[:50]}...")
-                return True
-            else:
-                logger.warning(
-                    f"Attempt {attempt + 1}: Error sending photo. Status: {response.status_code}"
-                )
-                if attempt < retry - 1:
-                    time.sleep(2**attempt)
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Attempt {attempt + 1}: Connection error: {e}")
-            if attempt < retry - 1:
-                time.sleep(2**attempt)
-
-    logger.error(f"Failed to send photo after {retry} attempts.")
-    return False
 
 
 def send_message(channel: str, message: str, retry: int = 3) -> bool:
@@ -195,8 +141,6 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
 
                 clean_text = clean_summary(summary)
 
-                image_url = extract_image(entry)
-
                 message = (
                     f"📰 <b>{feed_name}</b>\n\n"
                     f"<b>{title}</b>\n\n"
@@ -205,15 +149,7 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
                 )
 
                 success = False
-                if image_url:
-                    success = send_photo(CHANNEL, image_url, message)
-                    if not success:
-                        logger.info(
-                            f"Failed to send photo, trying only message to: {title[:50]}..."
-                        )
-                        success = send_message(CHANNEL, message)
-                else:
-                    success = send_message(CHANNEL, message)
+                success = send_message(CHANNEL, message)
 
                 if success:
                     if save_posted(link):
