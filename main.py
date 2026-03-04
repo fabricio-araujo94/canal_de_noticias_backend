@@ -2,13 +2,14 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, Set
 
 import feedparser
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from supabase import Client, create_client
 
 # logging config
 logging.basicConfig(
@@ -24,15 +25,16 @@ load_dotenv()
 
 # constants
 TOKEN = os.getenv("TELEGRAM_TOKEN")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+CHANNEL = "@jornaldepedra"
+CHECK_INTERVAL = 600  # every 10 minutes
+MAX_ITEMS_PER_FEED = 5
+KEEP_ALIVE_INTERVAL = 4300
+
 if not TOKEN:
     logger.error("TELEGRAM_TOKEN not found in environment variables")
     raise ValueError("TELEGRAM_TOKEN is required")
-
-CHANNEL = "@jornaldepedra"
-POSTED_FILE = "posted_links.txt"  # temporary
-CHECK_INTERVAL = 600  # every 10 minutes
-MAX_ITEMS_PER_FEED = 5
-
 
 def load_posted() -> Set[str]:
     try:
