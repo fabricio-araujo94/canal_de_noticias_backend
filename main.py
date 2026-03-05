@@ -64,14 +64,30 @@ def load_posted() -> Set[str]:
         return set()
 
 
-def save_posted(link: str) -> bool:
+def save_posted(link: str, feed_name: str, title: str = "") -> bool:
     try:
-        with open(POSTED_FILE, "a", encoding="utf-8") as f:
-            f.write(link + "\n")
-        return True
+        data = {
+            "link": link,
+            "feed_name": feed_name,
+            "title": title[:255] if title else "",
+            "posted_at": datetime.now().isoformat(),
+        }
+
+        response = supabase.table("posted_links").insert(data).execute()
+
+        if hasattr(response, "data") and response.data:
+            logger.debug(f"Link saved: {link[:50]}...")
+            return True
+        else:
+            logger.warning(f"Unexpected response when saving: {response}")
+            return False
     except Exception as e:
-        logger.error(f"Error saving link {link}: {e}")
-        return False
+        if "duplicate key" in str(e).lower():
+            logger.debug(f"Link already exists (duplicate ignored): {link[:50]}...")
+            return True
+        else:
+            logger.error(f"Error saving link in Supabase: {e}")
+            return False
 
 
 def clean_summary(summary: str, max_length: int = 300) -> str:
