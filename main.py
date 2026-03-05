@@ -50,15 +50,17 @@ except Exception as e:
 
 def load_posted() -> Set[str]:
     try:
-        with open(POSTED_FILE, "r", encoding="utf-8") as f:
-            links = set(f.read().splitlines())
-        logger.info(f"Loaded {len(links)} links already published")
-        return links
-    except FileNotFoundError:
-        logger.info("Archive of published links not found. Creating new one.")
+        response = supabase.table("posted_links").select("link").execute()
+
+        if hasattr(response, "data") and response.data:
+            links = {item["link"] for item in response.data}
+            logger.info(f"{len(links)} links from Supabase loaded")
+            return links
+
+        logger.info("No links found in Supabase.")
         return set()
     except Exception as e:
-        logger.error(f"Error loading links: {e}")
+        logger.error(f"Error loading links from Supabase: {e}")
         return set()
 
 
