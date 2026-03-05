@@ -36,6 +36,18 @@ if not TOKEN:
     logger.error("TELEGRAM_TOKEN not found in environment variables")
     raise ValueError("TELEGRAM_TOKEN is required")
 
+if not SUPABASE_URL or not SUPABASE_KEY:
+    logger.error("Supabase credentials not found.")
+    raise ValueError("SUPABASE_URL and SUPABASE_KEY are required.")
+
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    logger.info("Successfully connected to Supabase")
+except Exception as e:
+    logger.error(f"Error connecting to Supabase: {e}")
+    raise
+
+
 def load_posted() -> Set[str]:
     try:
         with open(POSTED_FILE, "r", encoding="utf-8") as f:
