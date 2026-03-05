@@ -90,6 +90,28 @@ def save_posted(link: str, feed_name: str, title: str = "") -> bool:
             return False
 
 
+def cleanup_old_links(days: int = 30) -> int:
+    try:
+        cutoff_date = datetime.now() - timedelta(days=days).isoformat()
+
+        response = (
+            supabase.table("posted_links")
+            .delete()
+            .lt("posted_at", cutoff_date)
+            .execute()
+        )
+
+        if hasattr(response, "data") and response.data:
+            count = len(response.data)
+            logger.info(f"Removed {count} links older than {days} days.")
+            return count
+
+        return 0
+    except Exception as e:
+        logger.error(f"Error while clearing old links: {e}")
+        return 0
+
+
 def clean_summary(summary: str, max_length: int = 300) -> str:
     try:
         if not summary:
