@@ -234,6 +234,8 @@ def main():
 
     posted_links = load_posted()
 
+    cleanup_old_links(days=30)
+
     try:
         with open("feeds.json", "r", encoding="utf-8") as f:
             feeds_data = json.load(f)
