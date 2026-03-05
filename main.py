@@ -30,7 +30,6 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 CHANNEL = "@jornaldepedra"
 CHECK_INTERVAL = 600  # every 10 minutes
 MAX_ITEMS_PER_FEED = 5
-KEEP_ALIVE_INTERVAL = 4300
 
 if not TOKEN:
     logger.error("TELEGRAM_TOKEN not found in environment variables")
@@ -180,6 +179,8 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
             logger.warning(f"“Feed {feed_name} did not return any entries.”")
             return
 
+        new_news = 0
+
         for i, entry in enumerate(feed.entries[:MAX_ITEMS_PER_FEED]):
             try:
                 link = entry.get("link", "")
@@ -206,8 +207,9 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
                 success = send_message(CHANNEL, message)
 
                 if success:
-                    if save_posted(link):
+                    if save_posted(link, feed_name, title):
                         posted_links.add(link)
+                        new_news += 1
                         logger.info(f"News published: {title[:50]}...")
                     else:
                         logger.error(f"News sent but link not saved: {title[:50]}...")
@@ -219,6 +221,8 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
             except Exception as e:
                 logger.error(f"Error processing entry {i} from feed {feed_name}: {e}")
                 continue
+
+        logger.info(f"{feed_name}: {new_news} new news.")
     except Exception as e:
         logger.error(f"Error processing feed {feed_name}: {e}")
 
