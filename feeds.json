@@ -7,6 +7,14 @@
     {
       "name": "Brasil de Fato",
       "url": "https://www.brasildefato.com.br/feed/"
+    },
+    {
+      "name": "Intercept Brasil",
+      "url": "https://www.intercept.com.br/feed/"
+    },
+    {
+      "name": "Carta Capital",
+      "url": "https://www.cartacapital.com.br/feed/"
     }
   ]
 }

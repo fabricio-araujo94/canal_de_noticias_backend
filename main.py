@@ -28,7 +28,7 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 CHANNEL = "@jornaldepedra"
-MAX_ITEMS_PER_FEED = 5
+MAX_ITEMS_PER_FEED = 20
 
 if not TOKEN:
     logger.error("TELEGRAM_TOKEN not found in environment variables")
