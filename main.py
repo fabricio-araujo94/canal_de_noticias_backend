@@ -28,7 +28,6 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 CHANNEL = "@jornaldepedra"
-CHECK_INTERVAL = 600  # every 10 minutes
 MAX_ITEMS_PER_FEED = 5
 
 if not TOKEN:
@@ -248,39 +247,20 @@ def main():
         logger.info(f"Loaded {len(feeds)} feeds to monitor")
         for feed in feeds:
             logger.info(f"  - {feed.get('name')}: {feed.get('url')}")
+            process_feed(feed, posted_links)
+            time.sleep(5)
     except FileNotFoundError:
         logger.error("Feeds.json file not found.")
         return
     except json.JSONDecodeError as e:
         logger.error(f"Error parsing feeds.json: {e}")
         return
-
-    cycle_count = 0
-
-    while True:
-        cycle_count += 1
-        logger.info(f"\n--- Cycle {cycle_count} started ---")
-
-        try:
-            for feed in feeds:
-                process_feed(feed, posted_links)
-                time.sleep(5)
-            logger.info(
-                f"Cycle {cycle_count} complete. Waiting {CHECK_INTERVAL / 60:.0f} minutes..."
-            )
-        except KeyboardInterrupt:
-            logger.info("Bot stopped by user")
-            break
-        except Exception as e:
-            logger.error(f"Error in main cycle: {e}")
-            logger.info("Trying to continue...")
-
-        time.sleep(CHECK_INTERVAL)
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Error in main cycle: {e}")
+        logger.info("Trying to continue...")
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        logger.critical(f"Fatal error: {e}")
-        raise
+    main()
