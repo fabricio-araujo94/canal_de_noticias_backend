@@ -199,7 +199,10 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
                     continue
 
                 title = entry.get("title", "No title")
+                
                 summary = entry.get("summary", "")
+                if not summary and "content" in entry:
+                    summary = entry.content[0].value
 
                 clean_text = clean_summary(summary)
 
