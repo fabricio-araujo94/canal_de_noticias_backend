@@ -165,7 +165,7 @@ def send_message(session: requests.Session, channel: str, message: str, retry: i
     return False
 
 
-def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
+def process_feed(session: requests.Session, feed_info: Dict[str, str], posted_links: Set[str]) -> None:
     feed_name = feed_info.get("name", "Unknown feed")
     feed_url = feed_info.get("url", "")
 
@@ -214,7 +214,7 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
                 )
 
                 success = False
-                success = send_message(CHANNEL, message)
+                success = send_message(session, CHANNEL, message)
 
                 if success:
                     if save_posted(link, feed_name, title):
@@ -255,10 +255,14 @@ def main():
             return
 
         logger.info(f"Loaded {len(feeds)} feeds to monitor")
-        for feed in feeds:
-            logger.info(f"  - {feed.get('name')}: {feed.get('url')}")
-            process_feed(feed, posted_links)
-            time.sleep(5)
+        
+        with requests.Session() as session:
+            for feed in feeds:
+                logger.info(f"  - {feed.get('name')}: {feed.get('url')}")
+                
+                process_feed(session, feed, posted_links)
+                
+                time.sleep(5)
     except FileNotFoundError:
         logger.error("Feeds.json file not found.")
         return
