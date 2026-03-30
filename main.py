@@ -29,6 +29,8 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 CHANNEL = "@jornaldepedra"
 MAX_ITEMS_PER_FEED = 20
+DAYS_TO_KEEP = 15
+
 
 if not TOKEN:
     logger.error("TELEGRAM_TOKEN not found in environment variables")
@@ -46,19 +48,25 @@ except Exception as e:
     raise
 
 
-def load_posted() -> Set[str]:
+def load_posted(days: int = DAYS_TO_KEEP) -> Set[str]:
     try:
-        response = supabase.table("posted_links").select("link").execute()
+        cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
+        response = (
+            supabase.table("posted_links")
+            .select("link")
+            .gte("posted_at", cutoff_date)
+            .execute()
+        )
 
         if hasattr(response, "data") and response.data:
             links = {item["link"] for item in response.data}
-            logger.info(f"{len(links)} links from Supabase loaded")
+            logger.info(f"{len(links)} links recentes carregados do Supabase")
             return links
 
-        logger.info("No links found in Supabase.")
+        logger.info("Nenhum link recente encontrado no Supabase.")
         return set()
     except Exception as e:
-        logger.error(f"Error loading links from Supabase: {e}")
+        logger.error(f"Erro ao carregar links do Supabase: {e}")
         return set()
 
 
@@ -231,9 +239,8 @@ def main():
     logger.info("Starting RSS Bot for Telegram")
     logger.info("=" * 50)
 
-    posted_links = load_posted()
-
-    cleanup_old_links(days=30)
+    cleanup_old_links(days=DAYS_TO_KEEP)
+    posted_links = load_posted(days=DAYS_TO_KEEP)
 
     try:
         with open("feeds.json", "r", encoding="utf-8") as f:
