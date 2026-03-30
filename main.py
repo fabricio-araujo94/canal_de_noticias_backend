@@ -135,7 +135,7 @@ def clean_summary(summary: str, max_length: int = 300) -> str:
         return summary[:max_length] + "..." if summary else ""
 
 
-def send_message(channel: str, message: str, retry: int = 3) -> bool:
+def send_message(session: requests.Session, channel: str, message: str, retry: int = 3) -> bool:
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
         "chat_id": channel,
@@ -146,17 +146,17 @@ def send_message(channel: str, message: str, retry: int = 3) -> bool:
 
     for attempt in range(retry):
         try:
-            response = requests.post(url, data=payload, timeout=10)
+            response = session.post(url, data=payload, timeout=10)
             if response.status_code == 200:
                 logger.info("Message sent successfully.")
                 return True
             else:
                 logger.warning(
-                    f"Attempt {attempt + 1}: Error sending message. Status: {response.status_code}"
+                    f"Attempt {attempt + 1}: Error sending. Status: {response.status_code}"
                 )
                 if attempt < retry - 1:
                     time.sleep(2**attempt)
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions. RequestException as e:
             logger.warning(f"Attempt {attempt + 1}: Connection error: {e}")
             if attempt < retry - 1:
                 time.sleep(2**attempt)
@@ -183,7 +183,7 @@ def process_feed(feed_info: Dict[str, str], posted_links: Set[str]) -> None:
             )
 
         if not feed.entries:
-            logger.warning(f"“Feed {feed_name} did not return any entries.”")
+            logger.warning(f"Feed {feed_name} did not return any entries.")
             return
 
         new_news = 0
