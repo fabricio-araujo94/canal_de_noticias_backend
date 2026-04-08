@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Set
+from typing import Dict, Set
 
 import feedparser
 import requests
@@ -27,7 +27,7 @@ load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-CHANNEL = "@jornaldepedra"
+CHANNEL = os.getenv("TELEGRAM_CHANNEL")
 MAX_ITEMS_PER_FEED = 20
 DAYS_TO_KEEP = 3
 
@@ -96,26 +96,13 @@ def save_posted(link: str, feed_name: str, title: str = "") -> bool:
             return False
 
 
-def cleanup_old_links(days: int = 30) -> int:
+def cleanup_old_links(days: int) -> None:
     try:
-        cutoff_date = datetime.now() - timedelta(days=days).isoformat()
-
-        response = (
-            supabase.table("posted_links")
-            .delete()
-            .lt("posted_at", cutoff_date)
-            .execute()
-        )
-
-        if hasattr(response, "data") and response.data:
-            count = len(response.data)
-            logger.info(f"Removed {count} links older than {days} days.")
-            return count
-
-        return 0
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        supabase.table("posted_links").delete().lt("posted_at", cutoff).execute()
+        logger.info(f"Cleanup completed ({days} days)")
     except Exception as e:
-        logger.error(f"Error while clearing old links: {e}")
-        return 0
+        logger.error(f"Cleanup error: {e}")
 
 
 def clean_summary(summary: str, max_length: int = 300) -> str:
