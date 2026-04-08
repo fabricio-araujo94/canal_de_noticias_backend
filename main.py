@@ -124,35 +124,30 @@ def clean_summary(summary: str, max_length: int = 300) -> str:
         return html.escape(summary[:max_length])
 
 
-def send_message(
-    session: requests.Session, channel: str, message: str, retry: int = 3
-) -> bool:
+def send_message(session: requests.Session, message: str) -> bool:
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
     payload = {
-        "chat_id": channel,
+        "chat_id": CHANNEL,
         "text": message,
         "parse_mode": "HTML",
         "disable_web_page_preview": True,
     }
 
-    for attempt in range(retry):
+    for attempt in range(3):
         try:
-            response = session.post(url, data=payload, timeout=10)
-            if response.status_code == 200:
-                logger.info("Message sent successfully.")
-                return True
-            else:
-                logger.warning(
-                    f"Attempt {attempt + 1}: Error sending. Status: {response.status_code}"
-                )
-                if attempt < retry - 1:
-                    time.sleep(2**attempt)
-        except requests.exceptions.RequestException as e:
-            logger.warning(f"Attempt {attempt + 1}: Connection error: {e}")
-            if attempt < retry - 1:
-                time.sleep(2**attempt)
+            r = session.post(url, data=payload, timeout=10)
 
-    logger.error(f"Failed to send message after {retry} attempts.")
+            if r.status_code == 200:
+                return True
+
+            logger.warning(f"Error {r.status_code}: {r.text}")
+
+        except requests.RequestException as e:
+            logger.warning(f"Connection Error: {e}")
+
+        time.sleep(2**attempt)
+
     return False
 
 
