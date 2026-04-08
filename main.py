@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import Dict, Set
 
@@ -245,12 +246,10 @@ def main():
         logger.info(f"Loaded {len(feeds)} feeds to monitor")
 
         with requests.Session() as session:
-            for feed in feeds:
-                logger.info(f"  - {feed.get('name')}: {feed.get('url')}")
-
-                process_feed(session, feed, posted_links)
-
-                time.sleep(5)
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                for feed in feeds:
+                    logger.info(f"  - {feed.get('name')}: {feed.get('url')}")
+                    executor.submit(process_feed, session, feed, posted_links)
     except FileNotFoundError:
         logger.error("Feeds.json file not found.")
         return
