@@ -29,7 +29,7 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 CHANNEL = "@jornaldepedra"
 MAX_ITEMS_PER_FEED = 20
-DAYS_TO_KEEP = 15
+DAYS_TO_KEEP = 3
 
 
 if not TOKEN:
@@ -135,7 +135,9 @@ def clean_summary(summary: str, max_length: int = 300) -> str:
         return summary[:max_length] + "..." if summary else ""
 
 
-def send_message(session: requests.Session, channel: str, message: str, retry: int = 3) -> bool:
+def send_message(
+    session: requests.Session, channel: str, message: str, retry: int = 3
+) -> bool:
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
         "chat_id": channel,
@@ -156,7 +158,7 @@ def send_message(session: requests.Session, channel: str, message: str, retry: i
                 )
                 if attempt < retry - 1:
                     time.sleep(2**attempt)
-        except requests.exceptions. RequestException as e:
+        except requests.exceptions.RequestException as e:
             logger.warning(f"Attempt {attempt + 1}: Connection error: {e}")
             if attempt < retry - 1:
                 time.sleep(2**attempt)
@@ -165,7 +167,9 @@ def send_message(session: requests.Session, channel: str, message: str, retry: i
     return False
 
 
-def process_feed(session: requests.Session, feed_info: Dict[str, str], posted_links: Set[str]) -> None:
+def process_feed(
+    session: requests.Session, feed_info: Dict[str, str], posted_links: Set[str]
+) -> None:
     feed_name = feed_info.get("name", "Unknown feed")
     feed_url = feed_info.get("url", "")
 
@@ -199,7 +203,7 @@ def process_feed(session: requests.Session, feed_info: Dict[str, str], posted_li
                     continue
 
                 title = entry.get("title", "No title")
-                
+
                 summary = entry.get("summary", "")
                 if not summary and "content" in entry:
                     summary = entry.content[0].value
@@ -255,13 +259,13 @@ def main():
             return
 
         logger.info(f"Loaded {len(feeds)} feeds to monitor")
-        
+
         with requests.Session() as session:
             for feed in feeds:
                 logger.info(f"  - {feed.get('name')}: {feed.get('url')}")
-                
+
                 process_feed(session, feed, posted_links)
-                
+
                 time.sleep(5)
     except FileNotFoundError:
         logger.error("Feeds.json file not found.")
