@@ -165,7 +165,10 @@ def process_feed(
     logger.info(f"Processing feed: {feed_name}")
 
     try:
-        feed = feedparser.parse(feed_url)
+        feed = feedparser.parse(
+            feed_url,
+            request_headers={"User-Agent": "Mozilla/5.0"},
+        )
         if hasattr(feed, "bozo") and feed.bozo:
             logger.warning(
                 f"Feed {feed_name} may have parsing issues: {feed.bozo_exception}"
