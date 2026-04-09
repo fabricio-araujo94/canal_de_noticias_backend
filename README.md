@@ -53,21 +53,22 @@ Este projeto é um backend automatizado para um canal de notícias que agrega fe
 Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
 
 ```env
+TELEGRAM_CHANNEL=nome_ou_id_do_seu_canal
 TELEGRAM_TOKEN=seu_token_do_bot_telegram
 SUPABASE_URL=sua_url_do_supabase
 SUPABASE_KEY=sua_chave_do_supabase
 ```
-
+- `TELEGRAM_CHANNEL`: Nome do seu canal (se for público) ou o ID.
 - `TELEGRAM_TOKEN`: Token do seu bot do Telegram.
 - `SUPABASE_URL`: URL do seu projeto Supabase (encontrada em Settings > API).
 - `SUPABASE_KEY`: Chave anon/public do Supabase (encontrada em Settings > API).
 
 ### 2. Banco de Dados Supabase
 
-Execute o script SQL `supabase-schema.sql` no seu projeto Supabase para criar a tabela necessária:
+Execute o script SQL `init.sql` no seu projeto Supabase para criar a tabela necessária:
 
 - Acesse o painel do Supabase > SQL Editor
-- Cole e execute o conteúdo do arquivo `supabase-schema.sql`
+- Cole e execute o conteúdo do arquivo `init.sql`
 
 ### 3. Feeds RSS
 
@@ -110,10 +111,15 @@ Exemplo de cron (Linux/Mac):
 
 ## Estrutura do Projeto
 
-- `main.py`: Script principal com a lógica do bot
-- `feeds.json`: Configuração dos feeds RSS
+- `main.py`: Script principal
+- `config.py`: Carregamento das variáveis de ambiente e constantes
+- `logger.py`: Configuração do logger
+- `data/feeds.json`: Configuração dos feeds RSS
+- `db/init_db.sql`: Schema do banco de dados
+- `rss/feed_processor`: Processamento dos feeds RSS
+- `services/`: Interação com os serviços do Supabase e do Telegram
+- `utils/`: Funções para manipulação de tempo e texto
 - `requirements.txt`: Dependências Python
-- `supabase-schema.sql`: Schema do banco de dados
 - `README.md`: Este arquivo
 
 ## Dependências
