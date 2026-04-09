@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from threading import Lock
 from typing import Dict, Set
@@ -123,7 +122,6 @@ def clean_summary(summary: str, max_length: int = 300) -> str:
 
 
 def send_message(session: requests.Session, chat_id: str, message: str) -> bool:
-    """Send message to Telegram with retry logic."""
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
     payload = {
@@ -236,7 +234,7 @@ def process_feed(
                         f"[{feed_name}] Failed to publish: {title_raw[:50]}..."
                     )
 
-                time.sleep(0.5)
+                time.sleep(2)
 
             except Exception as e:
                 logger.error(f"[{feed_name}] Error processing entry {i}: {e}")
@@ -268,10 +266,9 @@ def main():
         logger.info(f"Loaded {len(feeds)} feeds")
 
         with requests.Session() as session:
-            with ThreadPoolExecutor(max_workers=5) as executor:
-                for feed in feeds:
-                    logger.info(f"Feed loaded: {feed.get('name')}")
-                    executor.submit(process_feed, session, feed, posted_links)
+            for feed in feeds:
+                logger.info(f"Feed loaded: {feed.get('name')}")
+                process_feed(session, feed, posted_links)
 
     except FileNotFoundError:
         logger.error("feeds.json file not found.")
